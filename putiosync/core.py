@@ -225,7 +225,7 @@ class PutioSynchronizer(object):
                 if self.temp_directory is not None:
                     temp_download_dir = os.path.join(self.temp_directory, relpath)
                 delete_file = not self._keep_files and (self.force_keep is None or  self.force_keep.match(full_path) is None)
-                self._do_queue_download(putio_file, target_dir, delete_after_download=delete_file, temp_download_dir=temp_download_dir)
+                self._do_queue_download(putio_file, target_dir, delete_after_download=delete_file, temp_dest=temp_download_dir)
         else:
             children = putio_file.dir()
             if not children:
