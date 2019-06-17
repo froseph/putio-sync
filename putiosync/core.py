@@ -95,7 +95,7 @@ class PutioSynchronizer(object):
     """Object encapsulating core synchronization logic and state"""
 
     def __init__(self, download_directory, putio_client, db_manager, download_manager, keep_files=False, poll_frequency=60,
-                 download_filter=None, force_keep=None, disable_progress=False):
+                 download_filter=None, force_keep=None, disable_progress=False, temp_directory=None):
         self._putio_client = putio_client
         self._download_directory = download_directory
         self._db_manager = db_manager
@@ -106,6 +106,7 @@ class PutioSynchronizer(object):
         self.download_filter = download_filter
         self.force_keep = force_keep
         self.disable_progress = disable_progress
+        self.temp_directory = temp_directory
 
     def get_download_directory(self):
         return self._download_directory
@@ -139,15 +140,23 @@ class PutioSynchronizer(object):
         else:
             logger.warn("File with id %r already marked as downloaded!", putio_file.id)
 
-    def _do_queue_download(self, putio_file, dest, delete_after_download=False):
+    def _do_queue_download(self, putio_file, dest, delete_after_download=False, temp_dest=None):
         if dest.endswith("..."):
             dest = dest[:-3]
+        if temp_dest is not None and temp_dest.endswith("..."):
+            temp_dest = temp_dest[:-3]
 
         if not self._already_downloaded(putio_file, dest):
-            if not os.path.exists(dest):
-                os.makedirs(dest)
+            if temp_dest is not None:
+                if not os.path.exists(temp_dest):
+                    os.makedirs(temp_dest)
 
-            download = Download(putio_file, dest)
+                download = Download(putio_file, temp_dest)
+            else:
+                if not os.path.exists(dest):
+                    os.makedirs(dest)
+                download = Download(putio_file, dest)
+
             total = putio_file.size
             if not self.disable_progress:
                 widgets = [
@@ -172,6 +181,13 @@ class PutioSynchronizer(object):
                 # and write a record of the download to the database
                 self._record_downloaded(putio_file)
                 logger.info("Download finished: {}".format(putio_file.name))
+                if temp_dest is not None:
+                    # Move the file from temp to download dir
+                    logger.info("Moving file to: {}".format(dest))
+                    if not os.path.exists(dest):
+                        os.makedirs(dest)
+                    os.rename(temp_dest, dest)
+
                 if delete_after_download:
                     try:
                         putio_file.delete()
@@ -206,8 +222,10 @@ class PutioSynchronizer(object):
             else:
                 logger.debug("Adding download to queue: '{0}'".format(full_path))
                 target_dir = os.path.join(self._download_directory, relpath)
+                if self.temp_directory is not None:
+                    temp_download_dir = os.path.join(self.temp_directory, relpath)
                 delete_file = not self._keep_files and (self.force_keep is None or  self.force_keep.match(full_path) is None)
-                self._do_queue_download(putio_file, target_dir, delete_after_download=delete_file)
+                self._do_queue_download(putio_file, target_dir, delete_after_download=delete_file, temp_download_dir=temp_download_dir)
         else:
             children = putio_file.dir()
             if not children:

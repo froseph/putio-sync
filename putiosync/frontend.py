@@ -117,6 +117,17 @@ def parse_arguments():
         )
     )
     parser.add_argument(
+        "--temp-dir",
+        default=None,
+        type=str,
+        help=(
+            "Directory for non-complete download files. If this is not given, "
+            "files will be downloaded directly to the download directory. "
+            "If given, files will first be downloaded to this temp dir, then "
+            "moved to the download directory after completion."
+        )
+    )
+    parser.add_argument(
         "download_directory",
         help="Directory into which files should be downloaded"
     )
@@ -224,7 +235,8 @@ def start_sync(args):
         poll_frequency=args.poll_frequency,
         download_filter=filter_compiled,
         force_keep=force_keep_compiled,
-        disable_progress=args.log is not None)
+        disable_progress=args.log is not None,
+        temp_directory=args.temp_directory)
     t = threading.Thread(target=synchronizer.run_forever)
     t.setDaemon(True)
     t.start()
