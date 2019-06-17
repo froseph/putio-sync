@@ -236,7 +236,7 @@ def start_sync(args):
         download_filter=filter_compiled,
         force_keep=force_keep_compiled,
         disable_progress=args.log is not None,
-        temp_directory=args.temp_directory)
+        temp_directory=args.temp_dir)
     t = threading.Thread(target=synchronizer.run_forever)
     t.setDaemon(True)
     t.start()
