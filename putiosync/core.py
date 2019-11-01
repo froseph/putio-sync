@@ -44,7 +44,8 @@ class DatabaseManager(object):
     def _ensure_database_exists(self):
         if not os.path.exists(SETTINGS_DIR):
             os.makedirs(SETTINGS_DIR)
-        self._db_engine = create_engine("sqlite:///{}".format(DATABASE_FILE))
+        self._db_engine = create_engine("sqlite:///{}".format(DATABASE_FILE),
+                                        connect_args={'check_same_thread':False})
         self._db_engine.connect()
         self._scoped_session = scoped_session(sessionmaker(self._db_engine))
         DBModelBase.metadata.create_all(self._db_engine)
