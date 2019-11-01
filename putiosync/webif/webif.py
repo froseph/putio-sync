@@ -123,11 +123,14 @@ class WebInterface(object):
         self.app.add_url_rule("/active", view_func=self._view_active)
         self.app.add_url_rule("/history", view_func=self._view_history)
         self.app.add_url_rule("/download_queue", view_func=self._view_download_queue)
+        self.app.add_url_rule("/trigger_check_now", view_func=self._view_trigger_check_now)
         self.app.add_url_rule("/history/page/<int:page>", view_func=self._view_history)
         self.app.add_url_rule("/transmission/rpc", methods=['POST', 'GET', ],
                               view_func=self.transmission_rpc_server.handle_request)
 
     def _pretty_size(self, size):
+        if size is None:
+            return "None"
         if size > 1024 * 1024 * 1024:
             return "%0.2f GB" % (size / 1024. / 1024 / 1024)
         elif size > 1024 * 1024:
@@ -178,6 +181,15 @@ class WebInterface(object):
             "recent": recent_completed
         }
         return flask.jsonify(download_queue)
+
+
+    def _view_trigger_check_now(self):
+        self.synchronizer._perform_single_check(isManualTrigger=True)
+        result = {
+            "current_datetime": datetime.datetime.now(),  # use as basis for other calculations
+            "message": "Manual check triggered"
+        }
+        return flask.jsonify(result)
 
     def _view_history(self, page=1):
         session = self.db_manager.get_db_session()

@@ -108,6 +108,7 @@ class PutioSynchronizer(object):
         self.force_keep = force_keep
         self.disable_progress = disable_progress
         self.temp_directory = temp_directory
+        self.check_is_running = False
 
     def get_download_directory(self):
         return self._download_directory
@@ -237,7 +238,13 @@ class PutioSynchronizer(object):
                 for child in children:
                     self._queue_download(child, os.path.join(relpath, putio_file.name), level + 1)
 
-    def _perform_single_check(self):
+    def _perform_single_check(self, isManualTrigger=False):
+        if isManualTrigger:
+            logger.info("Manual check triggered.")
+        if self.check_is_running:
+            logger.warning("No performing check. It's already running.")
+            return
+        self.check_is_running = True
         try:
             # Perform a single check for updated files to download
             for putio_file in self._putio_client.File.list():
@@ -247,6 +254,7 @@ class PutioSynchronizer(object):
                     logger.error("Unexpected error while performing check/download for file {}: {}".format(putio_file.name, ex))
         except Exception as ex:
             logger.error("Unexpected error while performing check/download: {}".format(ex))
+        self.check_is_running = False
 
     def _wait_until_downloads_complete(self):
         while not self._download_manager.is_empty():

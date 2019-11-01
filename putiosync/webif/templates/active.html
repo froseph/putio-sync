@@ -105,6 +105,14 @@
         })
     }
 
+    function triggerNow() {
+        $.ajax({
+            url: "/trigger_check_now",
+            dataType: "json",
+            success: triggerNowSuccess
+        })
+    }
+
     function prettify_bytes(bytes) {
         var GB = 1024 * 1024 * 1024;
         var MB = 1024 * 1024;
@@ -131,6 +139,11 @@
         minutes = Math.floor(eta_seconds / 60);
         seconds = eta_seconds % 60;
         return pad(minutes, 2) + ":" + pad(seconds, 2);
+    }
+
+
+    function triggerNowSuccess(data) {
+        window.alert("Download triggered");
     }
 
     function processQueueProgressUpdate(data) {
@@ -161,7 +174,18 @@
         if (data.downloads.length > 0) {
             $("#progress").html(downloadTemplate({downloads: data.downloads}));
         } else {
-            $("#progress").html("There are no downloads in the queue currently");
+            $("#progress").html("");
+            $("#progress").append($('<span>There are no downloads in the queue currently</span>'));
+
+            button = $("<button>Trigger check for new files</button>");
+
+            button.click(function () {
+                triggerNow();
+            });
+
+            $("#progress").append(
+                button
+            );
         }
         $("#recently-completed").html(recentlyCompletedTemplate({downloads: data.recent}));
     }
