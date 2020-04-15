@@ -13,6 +13,7 @@ from putiosync.download_manager import Download
 import webbrowser
 import time
 import os
+import shutil
 import sys
 from sqlalchemy import create_engine, exists
 from sqlalchemy.orm import scoped_session
@@ -160,6 +161,8 @@ class PutioSynchronizer(object):
                     os.makedirs(dest)
                 download = Download(putio_file, dest)
 
+            download.set_status("Queued")
+
             total = putio_file.size
             if not self.disable_progress:
                 widgets = [
@@ -171,6 +174,7 @@ class PutioSynchronizer(object):
 
             def start_callback(_download):
                 logger.info("Starting download {}".format(putio_file.name))
+                download.set_status("Downloading ...")
                 if not self.disable_progress:
                     pbar.start()
 
@@ -186,17 +190,30 @@ class PutioSynchronizer(object):
                 logger.info("Download finished: {}".format(putio_file.name))
                 if temp_dest is not None:
                     # Move the file from temp to download dir
-                    logger.info("Moving file to: {}".format(dest))
-                    if not os.path.exists(dest):
-                        os.makedirs(dest)
-                    os.rename(temp_dest, dest)
+                    _download.set_status("Moving ...")
+                    targetFile = os.path.join(dest, _download.get_filename().decode('utf-8'))
+                    sourceFile = os.path.join(temp_dest, _download.get_filename().decode('utf-8'))
+                    logger.info("Moving file {} -> {}".format(sourceFile, targetFile))
+                    try:
+                        if not os.path.exists(dest):
+                            os.makedirs(dest)
+                        shutil.move(sourceFile, targetFile)
+                        logger.info("File moved: {}".format(targetFile))
+                    except Exception as ex:
+                        logger.error("Error moving file to {}. {}".format(dest, ex))
+                        traceback.print_exc()
+                        return
 
                 if delete_after_download:
+                    _download.set_status("Deleting on Put.io ...")
                     try:
+                        logger.debug("Deleting file after download: {}".format(putio_file.name))
                         putio_file.delete()
                     except:
                         logger.error("Error deleting file {}. Assuming all is well but may require manual cleanup".format(putio_file.name))
                         traceback.print_exc()
+
+                _download.set_status("Done")
 
             download.add_start_callback(start_callback)
             if self.disable_progress is False:

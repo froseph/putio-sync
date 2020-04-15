@@ -4,6 +4,7 @@ import time
 import datetime
 import putiopy
 import os
+import shutil
 from putiosync import multipart_downloader
 
 
@@ -19,6 +20,7 @@ class Download(object):
         self._downloaded = 0
         self._start_datetime = None
         self._finish_datetime = None
+        self._status = None
 
     def _fire_progress_callbacks(self):
         for cb in list(self._progress_callbacks):
@@ -56,6 +58,12 @@ class Download(object):
 
     def get_finish_datetime(self):
         return self._finish_datetime
+
+    def get_status(self):
+        return self._status
+
+    def set_status(self, status):
+        self._status = status
 
     def add_start_callback(self, start_callback):
         """Add a callback to be called when there is new progress to report on a download
@@ -97,7 +105,7 @@ class Download(object):
         filename = self.get_filename()
 
         final_path = os.path.join(dest, filename.decode('utf-8'))
-        download_path = "{}.part".format(final_path.encode('utf-8'))
+        download_path = "{}.part".format(final_path)
 
         # ensure the path into which the download is going to be donwloaded exists. We know
         # that the 'dest' directory exists but in some cases the filename on put.io may
@@ -120,12 +128,14 @@ class Download(object):
                 self.get_size(),
                 transfer_callback,
                 params={'oauth_token': token})
+            f.flush()
+            os.fsync(f)
 
         # download to part file is complete.  Now move to its final destination
         if success:
             if os.path.exists(final_path):
                 os.remove(final_path)
-            os.rename(download_path, download_path[:-5])  # same but without '.part'
+            shutil.move(download_path, download_path[:-5])  # same but without '.part'
             self._finish_datetime = datetime.datetime.now()
             self._fire_completion_callbacks()
 

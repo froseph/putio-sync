@@ -160,6 +160,7 @@ class WebInterface(object):
                     "downloaded": download.get_downloaded(),
                     "start_datetime": download.get_start_datetime(),
                     "end_datetime": download.get_finish_datetime(),
+                    "status": download.get_status()
                 }
             )
 

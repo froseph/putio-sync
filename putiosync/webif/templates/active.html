@@ -25,6 +25,7 @@
            <p>{{name}} ({{pretty_size}})</p>
            {{#if is_active}}
            <p>
+             <b>Status:</b> {{status}}<br />
              <b>Downloaded:</b> {{pretty_downloaded}} ({{pretty_percent_complete}})<br />
              <b>ETA:</b> {{pretty_eta}} <b>Avg Rate:</b> {{pretty_bps}}
            </p>
@@ -156,7 +157,10 @@
             if (download.downloaded > 0) {
                 download.is_active = true;
                 download.js_start_datetime = Date.parse(download.start_datetime);
-                download.elapsed_milliseconds = js_current_datetime - download.js_start_datetime;
+                if (download.end_datetime != null)
+                    download.elapsed_milliseconds = Date.parse(download.end_datetime) - download.js_start_datetime;
+                else
+                    download.elapsed_milliseconds = js_current_datetime - download.js_start_datetime;
                 download.avg_bps = (download.downloaded / download.elapsed_milliseconds) * 1000.0;
                 download.pretty_bps = prettify_bytes(download.avg_bps) + "/s";
                 download.eta_secs = (download.size - download.downloaded) / download.avg_bps;
