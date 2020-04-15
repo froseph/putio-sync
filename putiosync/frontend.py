@@ -163,7 +163,7 @@ def start_sync(args):
             print("Invalid log-level argument")
 
 
-
+    logger.setLevel(log_level)
     ch = logging.StreamHandler()
     ch.setLevel(log_level)
     ch.setFormatter(formatter)
