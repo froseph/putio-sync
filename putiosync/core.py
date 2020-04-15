@@ -224,6 +224,7 @@ class PutioSynchronizer(object):
             else:
                 logger.debug("Adding download to queue: '{0}'".format(full_path))
                 target_dir = os.path.join(self._download_directory, relpath)
+                temp_download_dir = None
                 if self.temp_directory is not None:
                     temp_download_dir = os.path.join(self.temp_directory, relpath)
                 delete_file = not self._keep_files and (self.force_keep is None or  self.force_keep.match(full_path) is None)
