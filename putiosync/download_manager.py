@@ -230,8 +230,13 @@ class DownloadManager(threading.Thread):
             except IndexError:
                 time.sleep(0.5)  # don't busily spin
             else:
-                success = download.perform_download(self._token)
-                self._download_queue.popleft()
+                try:
+                    success = download.perform_download(self._token)
+                    self._download_queue.popleft()
+                except Exception as ex:
+                    logger.error("Error downloading file: {}".format(ex))
+                    traceback.print_exc()
+                    success = False
                 if not success:
                     # re-add to the end of the queue for retry but do not keep any state that may have been
                     # associated with the failed download

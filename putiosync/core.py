@@ -186,7 +186,11 @@ class PutioSynchronizer(object):
 
             def completion_callback(_download):
                 # and write a record of the download to the database
-                self._record_downloaded(putio_file)
+                try:
+                    self._record_downloaded(putio_file)
+                except Exception as ex:
+                    logger.error("Error setting file as downloaded: {}".format(ex))
+                    traceback.print_exc()
                 logger.info("Download finished: {}".format(putio_file.name))
                 if temp_dest is not None:
                     # Move the file from temp to download dir
