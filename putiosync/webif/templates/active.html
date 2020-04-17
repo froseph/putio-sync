@@ -16,6 +16,38 @@
         padding-right: 15px;
         padding-top: 10px;
     }
+
+    #triggerCheck:hover {
+        background-color: white;
+        color: #5b80a4;
+    }
+    #triggerCheck {
+        background-color: #5b80a4;
+        color: white;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: block;
+        font-size: 16px;
+        margin-top: 20px;
+        border-radius: 4px;
+        transition-duration: 0.4s;
+        border: 2px solid #5b80a4;
+    }
+
+    #checkStatus {
+        background-color: #006400;
+        color: white;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: block;
+        font-size: 16px;
+        margin-top: 20px;
+        border-radius: 4px;
+        transition-duration: 0.4s;
+        border: 2px solid #006400;
+    }
     </style>
 
     <script id="download-template" type="text/x-handlebars-template">
@@ -66,6 +98,7 @@
     <script type="text/javascript">
     var downloadTemplate = Handlebars.compile($("#download-template").html());
     var recentlyCompletedTemplate = Handlebars.compile($("#recent-completed-template").html());
+    var lastStatus = null;
     var bpsData = [];
     var bps_window_seconds = 60 * 2;
     var bpsPlot = $.plot("#bps-plot-placeholder", [ [0] ], {
@@ -144,10 +177,19 @@
 
 
     function triggerNowSuccess(data) {
-        window.alert("Download triggered");
+
+        button = $("#triggerCheck");
+        checkStatus = $("#checkStatus");
+        if (button.length) {
+            checkStatus.first().text("Checking done. If new files are found, the download will start shortly.");
+            button.show();
+        }
+
     }
 
     function processQueueProgressUpdate(data) {
+
+
         var js_current_datetime = Date.parse(data.current_datetime);
         updateBPS(data.bps);
         bpsPlot.setData([getBPSData()]);
@@ -177,18 +219,29 @@
 
         if (data.downloads.length > 0) {
             $("#progress").html(downloadTemplate({downloads: data.downloads}));
+            lastStatus = "download";
         } else {
+            // avoid updating content unnecessarily
+            if (lastStatus === "idle")
+                return;
+            lastStatus = "idle";
             $("#progress").html("");
-            $("#progress").append($('<span>There are no downloads in the queue currently</span>'));
+            $("#progress").append($('<span>There are no downloads in the queue currently</span><br />'));
 
-            button = $("<button>Trigger check for new files</button>");
+            button = $("<button id='triggerCheck'>Trigger check for new files</button>");
+
+            checkStatus = $("<span id='checkStatus'></span>");
+            checkStatus.hide();
 
             button.click(function () {
+                button.hide();
+                checkStatus.first().text("Checking for new files ...");
+                checkStatus.show();
                 triggerNow();
             });
 
             $("#progress").append(
-                button
+                button, checkStatus
             );
         }
         $("#recently-completed").html(recentlyCompletedTemplate({downloads: data.recent}));
