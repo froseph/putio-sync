@@ -25,6 +25,7 @@ setup(
     entry_points={'console_scripts': ['putiosync=putiosync.frontend:main']},
     install_requires=get_requirements(),
     include_package_data=True,
+    setup_requires=['wheel'],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
