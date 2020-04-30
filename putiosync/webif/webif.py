@@ -1,6 +1,7 @@
 import logging
 from math import ceil
 import datetime
+import tempfile
 
 import flask
 from flask_restless import APIManager
@@ -127,6 +128,7 @@ class WebInterface(object):
         self.app.add_url_rule("/history/page/<int:page>", view_func=self._view_history)
         self.app.add_url_rule("/transmission/rpc", methods=['POST', 'GET', ],
                               view_func=self.transmission_rpc_server.handle_request)
+        self.app.add_url_rule("/new", methods=['POST', 'GET'], view_func=self._view_new)
 
     def _pretty_size(self, size):
         if size is None:
@@ -199,6 +201,18 @@ class WebInterface(object):
         return render_template("history.html",
                                total_downloaded=total_downloaded,
                                history=Pagination(downloads, page, per_page=100))
+    def _view_new(self):
+        if flask.request.method == 'GET':
+            return render_template("new.html")
+        if flask.request.method == 'POST':
+            # TODO find a way to return an error
+            with tempfile.NamedTemporaryFile(mode="w+t", suffix=".magnet") as temp:
+                self.app.logger.info("Magnet link: '%s'", flask.request.form.get('magnet_link'))
+                temp.write(flask.request.form.get('magnet_link'))
+                temp.flush()
+                self.app.logger.info("Adding temp torrent file from path '%s'", temp.name)
+                self.putio_client.Transfer.add_torrent(temp.name)
+            return self._view_active()
 
     def run(self):
         if self.launch_browser:

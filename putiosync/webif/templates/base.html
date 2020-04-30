@@ -33,6 +33,7 @@
         </div>
         <div class="navbar-collapse collapse" id="navbar-main">
           <ul class="nav navbar-nav">
+            <li><a href="/new">New Transfer</a></li>
             <li><a href="/active">Queue/Active</a></li>
             <li><a href="/history">History</a></li>
             <li><a href="http://put.io/">Put.io</a></li>
@@ -60,6 +61,14 @@
     <script src="/static/js/jquery.flot.js"></script>
     <script src="/static/js/bootstrap.min.js"></script>
     <script src="/static/js/handlebars-v1.3.0.js"></script>
+    <script id="new-transfer-js">
+        $(function () {
+            $('#new-transfer-modal').on('click', '.save', function (e) {
+                $('#new-transfer-form').submit();
+                 $('#new-transfer-modal').modal('hide');
+            });
+        });
+    </script>
     {% block javascript %}{% endblock %}
   </body>
 </html>
