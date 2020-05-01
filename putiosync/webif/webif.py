@@ -219,15 +219,8 @@ class WebInterface(object):
             except:
                 flask.flash('Unknown Error. Try submitting again.', 'danger')
                 return flask.redirect(flask.request.referrer)
-            # TODO freeze reqs
             # TODO change to use simplified magnet link method
-            #self.putio_client.Transfer.add_url(flask.request.form.get('magnet_link')
-            with tempfile.NamedTemporaryFile(mode="w+t", suffix=".magnet") as temp:
-                self.app.logger.info("Magnet link: '%s'", flask.request.form.get('magnet_link'))
-                temp.write(flask.request.form.get('magnet_link'))
-                temp.flush()
-                self.app.logger.info("Adding temp torrent file from path '%s'", temp.name)
-                self.putio_client.Transfer.add_torrent(temp.name)
+            self.putio_client.Transfer.add_url(flask.request.form.get('magnet_link'))
             flask.flash('Success! Put.io is now downloading your file', 'success')
             return flask.redirect(flask.request.referrer)
 
