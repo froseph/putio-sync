@@ -120,6 +120,11 @@ class WebInterface(object):
                 "GET_MANY": [include_datetime]
             })
 
+        # Uploading
+        self.app.config['UPLOAD_FOLDER'] = '/tmp'
+        # 5 megabytes
+        self.app.config['MAX_CONTENT_PATH'] = 5242880
+
         # CSRF protections
         self.app.config.update(WTF_CSRF_CHECK_DEFAULT=False)
         self.app.config.update(SECRET_KEY=''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)]))

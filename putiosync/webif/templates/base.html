@@ -73,17 +73,27 @@
 	<h4 class="modal-title" id="myModalLabel">New Transfer</h4>
       </div>
       <div class="modal-body">
-	<form id="new-transfer-form" method="post" action="/new">
+
+	<form id="new-transfer-form" method="post" enctype = "multipart/form-data" action="/new">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-		  <!--
+
+
 	  <div class="form-group">
 	    <label for="torrent-file" class="control-label">Torrent File:</label>
-	    <input type="text" class="form-control" id="torrent-file" name="torrent_file">
+
+        <div class="input-group">
+        <input type="text" class="form-control" placeholder="Torrent File" id="torrent-file-name" disabled>
+        <span class="input-group-btn">
+            <label class="btn btn-primary" for="torrent-file">
+                <input id="torrent-file" type="file">
+                Browse
+            </label>
+        </span>
+        </div>
 	  </div>
-		  -->
 	  <div class="form-group">
-	    <label for="magnet-link" class="control-label">Magnet Link:</label>
-	    <textarea class="form-control" id="magnet-link" name="magnet_link"></textarea>
+	    <label for="magnet-link" class="control-label">Magnet Link / URL:</label>
+	    <textarea class="form-control" id="magnet-link" name="magnet_link" placeholder="magnet:..."></textarea>
 	  </div>
 	</form>
       </div>
@@ -107,6 +117,9 @@
             $('#new-transfer-modal').on('click', '.save', function (e) {
                 $('#new-transfer-form').submit();
                  $('#new-transfer-modal').modal('hide');
+            });
+            $('#torrent-file').on('change', function(e) {
+                $('#torrent-file-name').val(this.files[0].name);
             });
         });
     </script>
