@@ -2,9 +2,12 @@ import logging
 from math import ceil
 import datetime
 import tempfile
+import random
+import string
 
 import flask
 from flask_restless import APIManager
+from flask_wtf.csrf import CSRFProtect, CSRFError
 from putiosync.dbmodel import DownloadRecord
 from flask import render_template
 from putiosync.webif.transmissionrpc import TransmissionRPCServer
@@ -103,6 +106,7 @@ class WebInterface(object):
         self._host = host
         self._port = port
         self._rate_tracker = DownloadRateTracker()
+        self._csrf = CSRFProtect()
 
         self.app.logger.setLevel(logging.WARNING)
 
@@ -115,6 +119,11 @@ class WebInterface(object):
             postprocessors={
                 "GET_MANY": [include_datetime]
             })
+
+        # CSRF protections
+        self.app.config.update(WTF_CSRF_CHECK_DEFAULT=False)
+        self.app.config.update(SECRET_KEY=''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)]))
+        self._csrf.init_app(self.app)
 
         # filters
         self.app.jinja_env.filters["prettysize"] = self._pretty_size
@@ -205,14 +214,22 @@ class WebInterface(object):
         if flask.request.method == 'GET':
             return render_template("new.html")
         if flask.request.method == 'POST':
-            # TODO find a way to return an error
+            try:
+                self._csrf.protect()
+            except:
+                flask.flash('Unknown Error. Try submitting again.', 'danger')
+                return flask.redirect(flask.request.referrer)
+            # TODO freeze reqs
+            # TODO change to use simplified magnet link method
+            #self.putio_client.Transfer.add_url(flask.request.form.get('magnet_link')
             with tempfile.NamedTemporaryFile(mode="w+t", suffix=".magnet") as temp:
                 self.app.logger.info("Magnet link: '%s'", flask.request.form.get('magnet_link'))
                 temp.write(flask.request.form.get('magnet_link'))
                 temp.flush()
                 self.app.logger.info("Adding temp torrent file from path '%s'", temp.name)
                 self.putio_client.Transfer.add_torrent(temp.name)
-            return self._view_active()
+            flask.flash('Success! Put.io is now downloading your file', 'success')
+            return flask.redirect(flask.request.referrer)
 
     def run(self):
         if self.launch_browser:

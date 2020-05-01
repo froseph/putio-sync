@@ -17,10 +17,11 @@
       </div>
       <div class="modal-body">
 	<form id="new-transfer-form" method="post" action="/new">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 	  <div class="form-group">
 		  <!--
 	    <label for="torrent-file" class="control-label">Torrent File:</label>
-	    <input type="text" class="form-control" id="torrent-file" name="torrent_file">
+	    <input type="text" class="form-control" id="torrent-file">
 		  -->
 	  </div>
 	  <div class="form-group">
