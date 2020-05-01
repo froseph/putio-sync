@@ -1,15 +1,16 @@
 import logging
 from math import ceil
 import datetime
-import tempfile
 import random
 import string
+import os
 
 import flask
+from flask import render_template, request, redirect, flash
+from werkzeug.utils import secure_filename
 from flask_restless import APIManager
 from flask_wtf.csrf import CSRFProtect, CSRFError
 from putiosync.dbmodel import DownloadRecord
-from flask import render_template
 from putiosync.webif.transmissionrpc import TransmissionRPCServer
 from sqlalchemy import desc, func
 
@@ -122,6 +123,7 @@ class WebInterface(object):
 
         # Uploading
         self.app.config['UPLOAD_FOLDER'] = '/tmp'
+        self.app.config['ALLOWED_EXTENSIONS'] = {'torrent', 'magnet'}
         # 5 megabytes
         self.app.config['MAX_CONTENT_PATH'] = 5242880
 
@@ -143,6 +145,10 @@ class WebInterface(object):
         self.app.add_url_rule("/transmission/rpc", methods=['POST', 'GET', ],
                               view_func=self.transmission_rpc_server.handle_request)
         self.app.add_url_rule("/new", methods=['POST', 'GET'], view_func=self._view_new)
+
+    def _allowed_file(self, filename):
+        return '.' in filename and \
+            filename.rsplit('.', 1)[1].lower() in self.app.config['ALLOWED_EXTENSIONS']
 
     def _pretty_size(self, size):
         if size is None:
@@ -216,18 +222,34 @@ class WebInterface(object):
                                total_downloaded=total_downloaded,
                                history=Pagination(downloads, page, per_page=100))
     def _view_new(self):
-        if flask.request.method == 'GET':
+        if request.method == 'GET':
             return render_template("new.html")
-        if flask.request.method == 'POST':
+        if request.method == 'POST':
             try:
                 self._csrf.protect()
             except:
-                flask.flash('Unknown Error. Try submitting again.', 'danger')
-                return flask.redirect(flask.request.referrer)
-            # TODO change to use simplified magnet link method
-            self.putio_client.Transfer.add_url(flask.request.form.get('magnet_link'))
-            flask.flash('Success! Put.io is now downloading your file', 'success')
-            return flask.redirect(flask.request.referrer)
+                flash('Unknown Error. Try submitting again.', 'danger')
+                return redirect(request.referrer)
+            if request.form.get('magnet_link'):
+                self.app.logger.info("Magnet link: '%s'", request.form.get('magnet_link'))
+                self.putio_client.Transfer.add_url(request.form.get('magnet_link'))
+                flash('Success! Put.io is now downloading your torrent.', 'success')
+            if request.files.get('torrent_file'):
+                f = request.files['torrent_file']
+                if not f or f.filename == '':
+                    flash('No File Uploaded', 'danger')
+                elif self._allowed_file(f.filename):
+                    self.app.logger.info("Torrent File: '%s'", f.filename)
+                    filename = secure_filename(f.filename)
+                    full_path = os.path.join(self.app.config['UPLOAD_FOLDER'], filename)
+                    self.app.logger.info("Torrent File location: '%s'", full_path)
+                    f.save(full_path)
+                    self.putio_client.Transfer.add_torrent(full_path)
+                    os.remove(full_path)
+                    flash('Success! Put.io is now downloading your torrent.', 'success')
+                else:
+                    flash('Invalid file. Uploaded file must end in .torrent or .magnet', 'danger')
+            return redirect(request.referrer)
 
     def run(self):
         if self.launch_browser:
