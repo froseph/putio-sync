@@ -3,6 +3,7 @@ import logging
 import uuid
 import flask
 import os
+from datetime import datetime
 
 
 logger = logging.getLogger(__name__)
@@ -92,7 +93,11 @@ class TransmissionTransferProxy(object):
             "leftUntilDone": lambda: self.transfer.size - self.transfer.downloaded,
             "errorString": lambda : '' if self.transfer.error_message is None else self.transfer.error_message,
             "isFinished": lambda : self.synchronizer.is_already_downloaded(self.transfer),
-            "eta": lambda : geteta(self.transfer.estimated_time)
+            "eta": lambda : geteta(self.transfer.estimated_time),
+            "rateDownload": lambda : self.transfer.down_speed,
+            "dateCreated" : lambda : int(self.transfer.created_at.timestamp()),
+            "doneDate" : lambda : int(datetime.fromisoformat(self.transfer.finished_at).timestamp()),
+            "percentDone" : lambda : self.transfer.percent_done / 100.0
         }
 
     def render_json(self, fields):

@@ -95,9 +95,51 @@
         {% endraw %}
     </script>
 
+    <script id="putio-status-template" type="text/x-handlebars-template">
+        {% raw %}
+        <table id="putio_tbl" class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Size</th>
+                    <th>Status</th>
+                    <th>Download Rate</th>
+                    <th>Percent Done</th>
+                    <th>ETA</th>
+                    <th>Date Started</th>
+                    <th>Date Completed</th>
+                </tr>
+            </thead>
+            <tbody>
+            {{#each torrents}}
+                <tr>
+                    <td>{{id}}</td>
+                    <td>{{name}}</td>
+                    <td>{{totalSize}}</td>
+                    <td>{{status}}</td>
+                    <td>{{rateDownload}}</td>
+                    <td>
+                        <div class="progress progress-striped">
+                            <div class="progress-bar progress-bar-info"
+                                role="progressbar"
+                                style="width: {{percentDone}}%">{{percentDone}}%</div>
+                        </div>
+                    </td>
+                    <td>{{eta}}</td>
+                    <td>{{dateCreated}}</td>
+                    <td>{{doneDate}}</td>
+                </tr>
+            {{/each}}
+            </tbody>
+        </table>
+        {% endraw %}
+    </script>
+
     <script type="text/javascript">
     var downloadTemplate = Handlebars.compile($("#download-template").html());
     var recentlyCompletedTemplate = Handlebars.compile($("#recent-completed-template").html());
+    var putioStatusTemplate = Handlebars.compile($("#putio-status-template").html());
     var lastStatus = null;
     var bpsData = [];
     var bps_window_seconds = 60 * 2;
@@ -136,6 +178,35 @@
             url: "/download_queue",
             dataType: "json",
             success: processQueueProgressUpdate
+        })
+    }
+
+    function updatePutioProgress() {
+        request = {
+            method: "torrent-get",
+                arguments: {
+                    "fields": [
+                    "id",
+                    "name",
+                    "status",
+                    "totalSize",
+                    "leftUntilDone",
+                    "errorString",
+                    "rateDownload",
+                    "dateCreated",
+                    "doneDate",
+                    "isFinished",
+                    "eta",
+                    "percentDone"]
+                },
+        };
+        $.ajax({
+            url: "/transmission/rpc",
+            dataType: "json",
+            contentType: "application/json",
+            data: JSON.stringify(request),
+            method: "POST",
+            success: processPutioProgressUpdate
         })
     }
 
@@ -185,6 +256,26 @@
             button.show();
         }
 
+    }
+    var statusMap = {
+        3: "In Queue",
+        4: "Downloading",
+        6: "Completed"
+    }
+
+    function processPutioProgressUpdate(data) {
+        data.arguments.torrents.sort(function (a, b) {
+            return b.dateCreated - a.dateCreated});
+        $.each(data.arguments.torrents, function(idx, torrent) {
+            torrent.status = statusMap[torrent.status];
+            torrent.totalSize = prettify_bytes(torrent.totalSize);
+            torrent.eta = pretty_eta_from_seconds(torrent.eta);
+            torrent.downRate = prettify_bytes(torrent.downRate) + "/s";
+            torrent.percentDone = torrent.percentDone * 100;
+            torrent.dateCreated = prettyUnixTimestamp(torrent.dateCreated);
+            torrent.doneDate = prettyUnixTimestamp(torrent.doneDate);
+        })
+        $("#putio-status").html(putioStatusTemplate(data.arguments));
     }
 
     function processQueueProgressUpdate(data) {
@@ -250,10 +341,14 @@
     $(document).ready(function() {
         updateQueueProgress();
         setInterval(updateQueueProgress, 1000);
+        updatePutioProgress();
+        setInterval(updatePutioProgress, 1000);
     })
     </script>
 {% endblock %}
 {% block body %}
+    <h2>Torrent Queue</h2>
+    <div class="container" id="putio-status"></div>
     <h2>Download Queue</h2>
     <div class="container" id="download-rate"></div>
     <div id="bps-plot-placeholder" style="width:100%;height: 100px;"></div>
