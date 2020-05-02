@@ -96,7 +96,7 @@ class TransmissionTransferProxy(object):
             "eta": lambda : geteta(self.transfer.estimated_time),
             "rateDownload": lambda : self.transfer.down_speed,
             "dateCreated" : lambda : int(self.transfer.created_at.timestamp()),
-            "doneDate" : lambda : int(datetime.fromisoformat(self.transfer.finished_at).timestamp()),
+            "doneDate" : lambda : int(datetime.fromisoformat(self.transfer.finished_at).timestamp()) if self.transfer.finished_at else '',
             "percentDone" : lambda : self.transfer.percent_done / 100.0
         }
 

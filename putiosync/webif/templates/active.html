@@ -365,7 +365,8 @@
         updateQueueProgress();
         setInterval(updateQueueProgress, 1000);
         updatePutioProgress();
-        setInterval(updatePutioProgress, 1000);
+        // Seems like put.io rate limits us, so no need to hammer their servers
+        setInterval(updatePutioProgress, 5000);
         $('#triggerClean').on('click', function(e) {
             triggerClean();
         })
