@@ -49,16 +49,16 @@
 
     <div class="container" style="clear:both">
         {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div class="error-messages">
+        <div id="error-messages" class="error-messages">
+            {% if messages %}
             {% for category, message in messages %}
             <div class="alert alert-{{category}} alert-dismissible" role="alert">
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 {{ message }}
             </div>
             {% endfor %}
+            {% endif %}
         </div>
-        {% endif %}
         {% endwith %}
 
         {% block body %}{% endblock %}

@@ -17,11 +17,11 @@
         padding-top: 10px;
     }
 
-    #triggerCheck:hover {
+    .btn-action:hover {
         background-color: white;
         color: #5b80a4;
     }
-    #triggerCheck {
+    .btn-action {
         background-color: #5b80a4;
         color: white;
         padding: 15px 32px;
@@ -49,6 +49,16 @@
         border: 2px solid #006400;
     }
     </style>
+
+    <script id='alert-template' type="text/x-handlebars-template">
+        {% raw %}
+        <div class="alert alert-{{status}} alert-dismissible" role="alert">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        {{message}}
+        </div>
+        {% endraw %}
+    </script>
+
 
     <script id="download-template" type="text/x-handlebars-template">
         {% raw %}
@@ -140,6 +150,7 @@
     var downloadTemplate = Handlebars.compile($("#download-template").html());
     var recentlyCompletedTemplate = Handlebars.compile($("#recent-completed-template").html());
     var putioStatusTemplate = Handlebars.compile($("#putio-status-template").html());
+    var alertTemplate = Handlebars.compile($("#alert-template").html());
     var lastStatus = null;
     var bpsData = [];
     var bps_window_seconds = 60 * 2;
@@ -149,7 +160,7 @@
         },
         yaxis: {
             min: 0,
-            max: 16
+            max: 64
         },
         xaxis: {
             min: 0,
@@ -216,6 +227,18 @@
             dataType: "json",
             success: triggerNowSuccess
         })
+    }
+
+    function triggerClean() {
+        $.ajax({
+            url: "/trigger_cleanup",
+            dataType: "json",
+            success: triggerCleanSuccess
+        });
+    }
+    function triggerCleanSuccess(data) {
+        html = $(alertTemplate({status: 'success', message: 'Cleaned torrent queue'}));
+        $('#error-messages').html(html);
     }
 
     function prettify_bytes(bytes) {
@@ -319,7 +342,7 @@
             $("#progress").html("");
             $("#progress").append($('<span>There are no downloads in the queue currently</span><br />'));
 
-            button = $("<button id='triggerCheck'>Trigger check for new files</button>");
+            button = $("<button id='triggerCheck' class='btn-action'>Trigger check for new files</button>");
 
             checkStatus = $("<span id='checkStatus'></span>");
             checkStatus.hide();
@@ -343,12 +366,18 @@
         setInterval(updateQueueProgress, 1000);
         updatePutioProgress();
         setInterval(updatePutioProgress, 1000);
+        $('#triggerClean').on('click', function(e) {
+            triggerClean();
+        })
     })
     </script>
 {% endblock %}
 {% block body %}
     <h2>Torrent Queue</h2>
     <div class="container" id="putio-status"></div>
+    <div class="container">
+        <button id='triggerClean' class='btn-action'>Clean torrent queue</button>
+    </div>
     <h2>Download Queue</h2>
     <div class="container" id="download-rate"></div>
     <div id="bps-plot-placeholder" style="width:100%;height: 100px;"></div>

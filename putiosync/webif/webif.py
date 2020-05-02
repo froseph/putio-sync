@@ -141,6 +141,7 @@ class WebInterface(object):
         self.app.add_url_rule("/history", view_func=self._view_history)
         self.app.add_url_rule("/download_queue", view_func=self._view_download_queue)
         self.app.add_url_rule("/trigger_check_now", view_func=self._view_trigger_check_now)
+        self.app.add_url_rule("/trigger_cleanup", view_func=self._view_trigger_cleanup)
         self.app.add_url_rule("/history/page/<int:page>", view_func=self._view_history)
         self.app.add_url_rule("/transmission/rpc", methods=['POST', 'GET', ],
                               view_func=self.transmission_rpc_server.handle_request)
@@ -211,6 +212,14 @@ class WebInterface(object):
         result = {
             "current_datetime": datetime.datetime.now(),  # use as basis for other calculations
             "message": "Manual check triggered"
+        }
+        return flask.jsonify(result)
+
+    def _view_trigger_cleanup(self):
+        self.putio_client.Transfer.clean()
+        result = {
+            "current_datetime": datetime.datetime.now(),  # use as basis for other calculations
+            "message": "Cleaned Put.io Transfers"
         }
         return flask.jsonify(result)
 
