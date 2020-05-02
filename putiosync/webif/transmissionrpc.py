@@ -16,6 +16,7 @@ def map_status(status):
         "IN_QUEUE": 3,  # queued
         "DOWNLOADING": 4,  # downloading
         "COMPLETED": 0,  # stopped and completed
+        "COMPLETING": 2, # saving the files, mapping to "checking"
     }.get(status, 3)  # default: queued
 
 def geteta(eta):
