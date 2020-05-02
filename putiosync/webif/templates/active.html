@@ -117,8 +117,8 @@
                     <th>Download Rate</th>
                     <th>Percent Done</th>
                     <th>ETA</th>
-                    <th>Date Started</th>
-                    <th>Date Completed</th>
+                    <th>Time Started</th>
+                    <th>Time Completed</th>
                 </tr>
             </thead>
             <tbody>
@@ -264,6 +264,9 @@
 
     function pretty_eta_from_seconds(eta_seconds) {
         eta_seconds = Math.floor(eta_seconds);
+        if (eta_seconds <= 0) {
+            return '-';
+        }
         minutes = Math.floor(eta_seconds / 60);
         seconds = eta_seconds % 60;
         return pad(minutes, 2) + ":" + pad(seconds, 2);
@@ -281,9 +284,10 @@
 
     }
     var statusMap = {
+        0: "Completed",
         3: "In Queue",
         4: "Downloading",
-        6: "Completed"
+        6: "Seeding"
     }
 
     function processPutioProgressUpdate(data) {
@@ -293,7 +297,11 @@
             torrent.status = statusMap[torrent.status];
             torrent.totalSize = prettify_bytes(torrent.totalSize);
             torrent.eta = pretty_eta_from_seconds(torrent.eta);
-            torrent.downRate = prettify_bytes(torrent.downRate) + "/s";
+            if (torrent.status == statusMap[4]) {
+                torrent.rateDownload = prettify_bytes(torrent.rateDownload) + "/s";
+            } else {
+                torrent.rateDownload = '-'
+            }
             torrent.percentDone = torrent.percentDone * 100;
             torrent.dateCreated = prettyUnixTimestamp(torrent.dateCreated);
             torrent.doneDate = prettyUnixTimestamp(torrent.doneDate);

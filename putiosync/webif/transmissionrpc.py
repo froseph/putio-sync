@@ -11,9 +11,11 @@ logger = logging.getLogger(__name__)
 
 def map_status(status):
     return {
+        "WAITING": 3, # queued
+        "SEEDING": 6, # seeding
         "IN_QUEUE": 3,  # queued
         "DOWNLOADING": 4,  # downloading
-        "COMPLETED": 6,  # seeding
+        "COMPLETED": 0,  # stopped and completed
     }.get(status, 3)  # default: queued
 
 def geteta(eta):
@@ -173,8 +175,6 @@ class TransmissionRPCServer(object):
             method = data['method']
             arguments = data.get('arguments', {})
             tag = data.get('tag')
-            logger.info("Method: %r, Arguments: %r", method, arguments)
-            logger.info("%r", flask.request.headers)
             try:
                 result = self.methods[method](**arguments)
             except Exception as e:
